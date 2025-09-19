@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCL Accounting Software</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #2c3e50;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #34495e;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    form, .report {
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+
+    form:hover {
+      transform: translateY(-5px);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #3498db;
+      outline: none;
+      box-shadow: 0 0 5px rgba(52,152,219,0.3);
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      background: #2980b9;
+      transform: scale(1.02);
+    }
+
+    table {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    table th {
+      background: #34495e;
+      color: white;
+      padding: 12px;
+      font-weight: 500;
+    }
+
+    table td {
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      background: white;
+    }
+
+    table tr:nth-child(even) td {
+      background: #f8f9fa;
+    }
+
+    table tr:hover td {
+      background: #e8f4f8;
+    }
+
+    .summary {
+      background: #34495e;
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+
+    /* New styles for delete buttons */
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+
+    /* Animation for new entries */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .new-entry {
+      animation: fadeIn 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <h1>BCL Cricket League Accounting Software</h1>
+  <div class="container">
+    <form id="playerForm">
+      <h2>Player Management</h2>
+      <input type="text" name="playerName" placeholder="Player Name" required />
+      <input type="text" name="teamName" placeholder="Team Name" required />
+      <input type="number" name="entryFee" placeholder="Entry Fee Paid" required />
+      <button type="submit">Add Player</button>
+      <table id="playerTable">
+        <thead>
+          <tr>
+            <th>Player Name</th>
+            <th>Team</th>
+            <th>Entry Fee</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </form>
+    <form id="expenseForm">
+      <h2>Expense Management</h2>
+      <input type="text" name="expenseCategory" placeholder="Expense Category" required />
+      <input type="number" name="expenseAmount" placeholder="Amount" required />
+      <button type="submit">Add Expense</button>
+      <table id="expenseTable">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </form>
+    <form id="prizeForm">
+      <h2>Prize Distribution</h2>
+      <input type="text" name="prizeCategory" placeholder="Prize Category" required />
+      <input type="number" name="prizeAmount" placeholder="Amount" required />
+      <button type="submit">Record Prize</button>
+      <table id="prizeTable">
+        <thead>
+          <tr>
+            <th>Prize Category</th>
+            <th>Amount</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </form>
+  </div>
+  <div class="report">
+    <h2>Financial Report</h2>
+    <div class="summary" id="financialSummary"></div>
+  </div>
+
+  <script>
+    let players = [];
+    let expenses = [];
+    let prizes = [];
+
+    // Add player
+    document.getElementById('playerForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const player = {
+        name: e.target.playerName.value,
+        team: e.target.teamName.value,
+        fee: parseFloat(e.target.entryFee.value),
+      };
+      players.push(player);
+      updateTable('playerTable', players, ['name', 'team', 'fee']);
+      calculateTotals();
+    });
+
+    // Add expense
+    document.getElementById('expenseForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const expense = {
+        category: e.target.expenseCategory.value,
+        amount: parseFloat(e.target.expenseAmount.value),
+      };
+      expenses.push(expense);
+      updateTable('expenseTable', expenses, ['category', 'amount']);
+      calculateTotals();
+    });
+
+    // Add prize
+    document.getElementById('prizeForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const prize = {
+        category: e.target.prizeCategory.value,
+        amount: parseFloat(e.target.prizeAmount.value),
+      };
+      prizes.push(prize);
+      updateTable('prizeTable', prizes, ['category', 'amount']);
+      calculateTotals();
+    });
+
+    // Update table
+    function updateTable(tableId, data, columns) {
+      const tableBody = document.querySelector(`#${tableId} tbody`);
+      tableBody.innerHTML = '';
+      data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'new-entry';
+        
+        columns.forEach((col) => {
+          const td = document.createElement('td');
+          td.textContent = row[col];
+          tr.appendChild(td);
+        });
+
+        // Add delete button
+        const actionTd = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          if (tableId === 'playerTable') {
+            players.splice(index, 1);
+            updateTable('playerTable', players, ['name', 'team', 'fee']);
+          } else if (tableId === 'expenseTable') {
+            expenses.splice(index, 1);
+            updateTable('expenseTable', expenses, ['category', 'amount']);
+          } else if (tableId === 'prizeTable') {
+            prizes.splice(index, 1);
+            updateTable('prizeTable', prizes, ['category', 'amount']);
+          }
+          calculateTotals();
+        };
+        actionTd.appendChild(deleteBtn);
+        tr.appendChild(actionTd);
+        
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // Calculate totals and update report
+    function calculateTotals() {
+      const totalIncome = players.reduce((sum, p) => sum + p.fee, 0);
+      const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalPrizes = prizes.reduce((sum, p) => sum + p.amount, 0);
+      const balance = totalIncome - totalExpense - totalPrizes;
+
+      const summary = `
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+          <div>
+            <h3>Income Summary</h3>
+            <p>Total Players: ${players.length}</p>
+            <p>Total Income: ₹${totalIncome.toFixed(2)}</p>
+          </div>
+          <div>
+            <h3>Expense Summary</h3>
+            <p>Total Expenses: ₹${totalExpense.toFixed(2)}</p>
+            <p>Total Prizes: ₹${totalPrizes.toFixed(2)}</p>
+          </div>
+        </div>
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+          <h3>Final Balance</h3>
+          <p style="font-size: 1.2em; color: ${balance >= 0 ? '#2ecc71' : '#e74c3c'}">
+            ₹${balance.toFixed(2)}
+          </p>
+        </div>
+      `;
+      document.getElementById('financialSummary').innerHTML = summary;
+    }
+  </script>
+</body>
+</html>
